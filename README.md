@@ -28,3 +28,126 @@ Mark
 P.S. Nice job getting the Awair devices! Let me know when you set them up and we can hook you into the Slack group.
 
 ~~~
+
+
+## AWAIR ##
+
+[API Docs](http://docs.awair.is/) - copied incase they take it down.
+
+###Devices###
+
+~~~
+curl "https://beta-api.awair.is/v1/users/self/devices"
+  -H "Authorization: Bearer {access_token}"
+~~~
+
+The above command returns JSON structured like this:
+
+~~~
+{
+    "pagination": {
+        "has_next": true,
+        "last_id": 2
+    },
+    "data": [
+        {
+            "device_id": 1,
+            "device_name": "My Desk",
+            "room_type": "Office",
+            "location_name": "Gangnamgu, Seoul",
+            "latitude": 37.4953685163334,
+            "longitude": 127.037206648538,
+            "owner_type": "admin"
+        },
+        {
+            "device_id": 2,
+            "device_name": "Bedroom",
+            "room_type": "Home",
+            "location_name": "Gwanakgu, Seoul",
+            "latitude": 37.444653348662,
+            "longitude": 126.913812465993,
+            "owner_type": "admin"
+        }
+    ]
+}
+~~~
+
+This endpoint retrieves all of your devices in a paginated fashion.
+
+HTTP Request
+
+`GET https://beta-api.awair.is/v1/users/self/devices`
+
+Query Parameters
+
+|Parameter|Default Description|
+|---|---|
+|limit   30|The maximum number of devices to return at once|
+|last_id 1|If included, device list will be fetched from after the last_id|
+
+###Data###
+
+~~~
+curl "https://beta-api.awair.is/v1/devices/:device_id/events/15min-avg"
+  -H "Authorization: Bearer {access_token}"
+~~~
+
+The above command returns JSON structured like this:
+
+~~~
+{
+    "data": [
+        {
+            "timestamp": "2016-06-12T03:30:00.000Z",
+            "score": 90,
+            "index": {
+                "temp": 1,
+                "humid": 0,
+                "co2": 0,
+                "voc": 1,
+                "dust": 1
+            },
+            "sensor": {
+                "temp": 23.2,
+                "humid": 45.3,
+                "co2": 600,
+                "voc": 324,
+                "dust": 11.3
+            }
+        }
+    ],
+    "pagination": {
+        "has_next": true,
+        "next_from": "2016-06-12T03:45:00.000Z"
+    }
+}
+~~~
+
+
+This endpoint retrieves device’s 15 minute average data.
+
+HTTP Request
+
+`GET https://beta-api.awair.is/v1/devices/:device_id/events/15min-avg`
+
+ You must replace :device_id with your own device id.
+Query Parameters
+
+|Parameter|Default Description|
+|---|---|
+|limit   10000|The maximum number of data points to return at once|
+|from    none|Time to fetch data from (ISO8601 timestamp; e.g. 2016-06-12T03:20:45.483Z)|
+|to  none    |Time to fetch data to (ISO8601 timestamp; e.g. 2016-06-13T03:20:45.483Z)|
+
+
+###Errors###
+
+The Awair API uses the following error codes:
+
+|Error Code|Meaning|
+|---|---|
+|400 Bad Request|One or more of the request parameters are invalid
+|401 Unauthorized | Access token is invalid or not permitted to perform the action requested
+|422 Unprocessable Entity |The request parameters were valid but could not be completed due to semantic errors
+|404 Not Found | No such endpoint exists
+|500 Internal Server Error| Something went wrong on server
