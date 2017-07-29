@@ -151,3 +151,23 @@ The Awair API uses the following error codes:
 |422 Unprocessable Entity |The request parameters were valid but could not be completed due to semantic errors
 |404 Not Found | No such endpoint exists
 |500 Internal Server Error| Something went wrong on server
+
+
+###ESDR###
+
+https://esdr.cmucreatelab.org/home
+
+email: doug.esdr@dugos.com
+
+Useful Guide: <https://github.com/CMU-CREATE-Lab/esdr/blob/master/HOW_TO.md>
+
+
+ClientId: MXHTUP
+ClientSecret: 2/BrjVTxC23Dl5uuJVjfeniPH8N4kmuqRn9i1jjp
+
+Create Token.
+~~~
+curl -X POST -H "Content-Type:application/json" https://esdr.cmucreatelab.org/oauth/token -d @auth.json -o token.json
+~~~
+
+
