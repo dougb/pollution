@@ -21,7 +21,7 @@ months_regex = "|".join(month_map.keys())
 mixing_height_url = "http://forecast.weather.gov/MapClick.php?w0=t&w3=sfcwind&w10=mhgt&AheadHour=0&Submit=Submit&&FcstType=graphical&site=all&menu=1&textField1=%f&textField2=%f"
 
 
-filename = "mixing_height_%d.html"
+filename = "/tmp/mx/mixing_height_%d.html"
 
 def float_range(start,end, points):
     if points == 1:
@@ -81,6 +81,16 @@ def computeTime(month_str,day,hour,meridiem):
 
     return ts
 
+def getLastUpdate(data):
+    return 0
+
+def getElevation(data):
+    grp = re.match("Elev\. (\d+) ft",data)
+    if grp:
+        return int(grp.group(1))
+    else:
+        print "Error Can't figure out Elevation!"
+        return -1
 
 # Main
 num_points = 1
@@ -90,15 +100,22 @@ grid_points = genGrid(40.148688, -80.332527, 40.717326,-79.596443, num_points)
 for i in range(len(grid_points)):
     lat = grid_points[i]['lat']
     lon = grid_points[i]['lon']
-    data_ts = int(time.time())
+    fetch_ts = int(time.time())
     url = mixing_height_url % (lat,lon)
     print "Fetching url:%s" % (url)
     html_data = fetchUrl(url,filename % (i))
     soup = bs4.BeautifulSoup(html_data,"html.parser")
 
+    lastUpdate_ts = getLastUpdate(html_data)
+    print "LastUpdate_ts:%d" % (lastUpdate_ts)
+    elevation_ft = getElevation(html_data)
+    print "Elevation:%d ft" % (elevation_ft)
 
+    sys.exit(0)
     weather_data = []
-    root_data = { "lat":lat, "lon":lon, "ts":data_ts, "data": weather_data }
+    root_data = { "lat":lat, "lon":lon, "fetchTs":fetch_ts,
+                  "lastUpdate_ts":lastUpdate_ts, "elevation":elevation_ft,
+                  "data": weather_data }
 
     for mp in soup.find_all("map"):
         for area in mp.find_all("area"):
@@ -121,5 +138,6 @@ for i in range(len(grid_points)):
                                        "mixing_ht":mixing_height } )
 
     print json.dumps(root_data)
+    time.sleep(1)
                 
 
