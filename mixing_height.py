@@ -108,7 +108,7 @@ def getElevation(data):
         return -1
 
 # Main
-num_points = 1
+num_points = 10
 
 grid_points = genGrid(40.148688, -80.332527, 40.717326,-79.596443, num_points)
 
