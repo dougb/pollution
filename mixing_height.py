@@ -88,14 +88,11 @@ def computeTime(month_str,day,hour,meridiem,minute=0,second=0,year=None):
 
     ts = int(time.mktime([year,mon,day,hour,minute,second,0,0,0]))
 
-    print "ts:%d (%s)" % (ts, time.localtime(ts))
-
     return ts
 
 def getLastUpdate(data):
     grp = re.findall("Last Update: (\d+)\:(\d\d) (am|pm) (\w\w\w) (\w\w\w) (\d+), (\d+)",data,flags=re.MULTILINE)
     if grp:
-        print "Group:",grp[0]
         (hr,min,meridem,tz,mon_str,mday,year) = grp[0]
         return computeTime(mon_str,int(mday),int(hr),meridem,minute=int(min),year=int(year))
     else:
@@ -127,9 +124,7 @@ with open('data.json', 'aw') as o:
         soup = bs4.BeautifulSoup(html_data,"html.parser")
 
         lastUpdate_ts = getLastUpdate(html_data)
-        print "LastUpdate_ts:%d (%s)" % (lastUpdate_ts,time.ctime(lastUpdate_ts))
         elevation_ft = getElevation(html_data)
-        print "Elevation:%d ft" % (elevation_ft)
 
         weather_data = []
         root_data = { "lat":lat, "lon":lon, "fetchTs":fetch_ts,
@@ -139,7 +134,7 @@ with open('data.json', 'aw') as o:
         for mp in soup.find_all("map"):
             for area in mp.find_all("area"):
                 mouse_over = area.attrs['onmouseover']
-                print "MouseOver:%s" % (mouse_over)
+                #print "MouseOver:%s" % (mouse_over)
                 match = re.match(".*(%s) (\d+)\D+(\d+)([a|p]m).+Temperature: (\d+) .+Surface Wind: (\w+) (\d+)mph.+Mixing Height: (\d+)ft" % (months_regex), mouse_over )
                 if match:
                     month = match.group(1)
