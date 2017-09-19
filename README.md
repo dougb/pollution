@@ -171,3 +171,5 @@ curl -X POST -H "Content-Type:application/json" https://esdr.cmucreatelab.org/oa
 ~~~
 
 
+###Ideas###
+- [GeoNotebook](https://github.com/OpenGeoscience/geonotebook) - Use this to visualize mixing height with SmellPgh Data.
