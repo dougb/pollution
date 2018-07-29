@@ -175,3 +175,5 @@ Purple Air
 
 [Ryan's Purple Air](https://www.purpleair.com/json?show=3723)
 
+###Ideas###
+- [GeoNotebook](https://github.com/OpenGeoscience/geonotebook) - Use this to visualize mixing height with SmellPgh Data.
