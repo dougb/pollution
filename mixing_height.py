@@ -10,6 +10,7 @@ import re
 import time
 import math
 import json
+import time
 
 
 month_map = { "Janurary":1, "Feburary":2, "March":3,
@@ -110,9 +111,15 @@ def getElevation(data):
 # Main
 num_points = 10
 
+if (not os.path.exists("/tmp/mx")):
+    print "Creating /tmp/mx"
+    os.mkdir("/tmp/mx") # Make sure tmp dir exists.
+
 grid_points = genGrid(40.148688, -80.332527, 40.717326,-79.596443, num_points)
 
-with open('data.json', 'aw') as o:
+out_filename = time.strftime("data%Y%m%d.json",time.gmtime())
+
+with open(out_filename, 'aw') as o:
 
     for i in range(len(grid_points)):
         lat = grid_points[i]['lat']
@@ -151,7 +158,6 @@ with open('data.json', 'aw') as o:
                                            "temp":temp_f, 
                                            "mixing_ht":mixing_height } )
 
-                
         print >> o, json.dumps(root_data)
         time.sleep(1)
                 
