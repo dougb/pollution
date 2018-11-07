@@ -9,7 +9,7 @@ import time
 import math
 import json
 import time
-
+from rockset import Client, Q, F
 
 month_map = { "Janurary":1, "Feburary":2, "March":3,
            "April":4, "May":5, "June":6,"July":7,"August":8,
@@ -109,6 +109,10 @@ def getElevation(data):
 # Main
 num_points = 10
 
+rs = Client()
+pit_inversion_data = rs.Collection.retrieve('pit_inversion_data')
+
+
 if (not os.path.exists("/tmp/mx")):
     print("Creating /tmp/mx")
     os.mkdir("/tmp/mx") # Make sure tmp dir exists.
@@ -157,6 +161,10 @@ with open(out_filename, 'a') as o:
                                            "mixing_ht":mixing_height } )
 
         print(json.dumps(root_data),file=o)
-        time.sleep(1)
-                
+        try:
+            rsret = pit_inversion_data.add_docs([root_data])
+        except:
+            print("ROCKSET FAILED! ts:%d" % (fetch_ts))
+        time.sleep(0.75)
+
 
