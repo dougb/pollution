@@ -1,9 +1,7 @@
 #!/usr/bin/env python
-# -*- mode:python tab-width:4; indent-tabs-mode:nil; py-indent-offset:4 -*-
 import sys
 import os
-import urllib2
-import urllib
+import urllib.request
 import bs4
 import string
 import re
@@ -52,22 +50,22 @@ def genLatLons(lats,lons):
 def fetchUrl(url,cache_filename):
     data = ""
     if os.path.exists(cache_filename) and os.path.getctime(cache_filename) > (time.time() - 3600):
-        print "Reading from cache '%s'" % (cache_filename)
-        with open(cache_filename,"rb") as f:
+        print("Reading from cache '%s'" % (cache_filename))
+        with open(cache_filename,"r") as f:
             data = f.read()
     else:
-        print "Fetching from web %s" % (url)
-        f = urllib2.urlopen(url)
-        data = f.read()
+        print("Fetching from web %s" % (url))
+        f = urllib.request.urlopen(url)
+        data = f.read().decode('utf-8')
         f.close()
 
-        print "Creating cache file '%s'" % (cache_filename)
-        with  open(cache_filename,"wb") as f:
+        print("Creating cache file '%s'" % (cache_filename))
+        with  open(cache_filename,"w") as f:
             f.write(data)
     return data
 
 def computeTime(month_str,day,hour,meridiem,minute=0,second=0,year=None):
-    if month_map.has_key(month_str):
+    if month_str in month_map:
         mon = month_map[month_str]
     else:
         mon = short_month_map[month_str]
@@ -87,7 +85,7 @@ def computeTime(month_str,day,hour,meridiem,minute=0,second=0,year=None):
         else:
             year = now.tm_year
 
-    ts = int(time.mktime([year,mon,day,hour,minute,second,0,0,0]))
+    ts = int(time.mktime((year,mon,day,hour,minute,second,0,0,0)))
 
     return ts
 
@@ -97,7 +95,7 @@ def getLastUpdate(data):
         (hr,min,meridem,tz,mon_str,mday,year) = grp[0]
         return computeTime(mon_str,int(mday),int(hr),meridem,minute=int(min),year=int(year))
     else:
-        print "ERROR:Couldn't find Last Updated"
+        print("ERROR:Couldn't find Last Updated", data)
         return -1
 
 def getElevation(data):
@@ -105,28 +103,28 @@ def getElevation(data):
     if grp:
         return int(grp[0])
     else:
-        print "Error Can't figure out Elevation!"
+        print("Error Can't figure out Elevation!")
         return -1
 
 # Main
 num_points = 10
 
 if (not os.path.exists("/tmp/mx")):
-    print "Creating /tmp/mx"
+    print("Creating /tmp/mx")
     os.mkdir("/tmp/mx") # Make sure tmp dir exists.
 
 grid_points = genGrid(40.148688, -80.332527, 40.717326,-79.596443, num_points)
 
 out_filename = time.strftime("data%Y%m%d.json",time.gmtime())
 
-with open(out_filename, 'aw') as o:
+with open(out_filename, 'a') as o:
 
     for i in range(len(grid_points)):
         lat = grid_points[i]['lat']
         lon = grid_points[i]['lon']
         fetch_ts = int(time.time())
         url = mixing_height_url % (lat,lon)
-        print "Fetching url:%s" % (url)
+        print("Fetching url:%s" % (url))
         html_data = fetchUrl(url,filename % (i))
         soup = bs4.BeautifulSoup(html_data,"html.parser")
 
@@ -141,7 +139,7 @@ with open(out_filename, 'aw') as o:
         for mp in soup.find_all("map"):
             for area in mp.find_all("area"):
                 mouse_over = area.attrs['onmouseover']
-                #print "MouseOver:%s" % (mouse_over)
+                #print("MouseOver:%s" % (mouse_over))
                 match = re.match(".*(%s) (\d+)\D+(\d+)([a|p]m).+Temperature: (\d+) .+Surface Wind: (\w+) (\d+)mph.+Mixing Height: (\d+)ft" % (months_regex), mouse_over )
                 if match:
                     month = match.group(1)
@@ -158,7 +156,7 @@ with open(out_filename, 'aw') as o:
                                            "temp":temp_f, 
                                            "mixing_ht":mixing_height } )
 
-        print >> o, json.dumps(root_data)
+        print(json.dumps(root_data),file=o)
         time.sleep(1)
                 
 
