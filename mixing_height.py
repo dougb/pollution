@@ -46,22 +46,38 @@ def genLatLons(lats,lons):
             lat_lons.append({ "lat":lat, "lon":lon } )
     return lat_lons
 
+def fetchUrlRetry(url,cache_filename):
+    c = 3
+    rc = 0
+    data = fetchUrl(url,cache_filename)
+    while( len(data) == 0 and  rc < c):
+        print("WARNING: Failed to fetch '%s' retrying %d" % (url,rc), file=sys.stderr)
+        time.sleep(5)
+        rc += 1
+        data = fetchUrl(url,cache_filename)
+    if(len(data) == 0):
+        print("ERROR: Failed to fetch '%s' after %d tries, giving up." % (url,c), file=sys.stderr)
+    return data
+
 
 def fetchUrl(url,cache_filename):
     data = ""
-    if os.path.exists(cache_filename) and os.path.getctime(cache_filename) > (time.time() - 3600):
+    if os.path.exists(cache_filename) and os.path.getctime(cache_filename) > (time.time() - 3000):
         print("Reading from cache '%s'" % (cache_filename))
         with open(cache_filename,"r") as f:
             data = f.read()
     else:
         print("Fetching from web %s" % (url))
-        f = urllib.request.urlopen(url)
-        data = f.read().decode('utf-8')
-        f.close()
+        try:
+            f = urllib.request.urlopen(url)
+            data = f.read().decode('utf-8')
+            f.close()
+            print("Creating cache file '%s'" % (cache_filename))
+            with  open(cache_filename,"w") as f:
+                f.write(data)
+        except:
+            print("ERROR; Request failed for '%s'" % (url), file=sys.stderr)
 
-        print("Creating cache file '%s'" % (cache_filename))
-        with  open(cache_filename,"w") as f:
-            f.write(data)
     return data
 
 def computeTime(month_str,day,hour,meridiem,minute=0,second=0,year=None):
@@ -129,7 +145,7 @@ with open(out_filename, 'a') as o:
         fetch_ts = int(time.time())
         url = mixing_height_url % (lat,lon)
         print("Fetching url:%s" % (url))
-        html_data = fetchUrl(url,filename % (i))
+        html_data = fetchUrlRetry(url,filename % (i))
         soup = bs4.BeautifulSoup(html_data,"html.parser")
 
         lastUpdate_ts = getLastUpdate(html_data)
@@ -138,7 +154,7 @@ with open(out_filename, 'a') as o:
         weather_data = []
         root_data = { "lat":lat, "lon":lon, "fetchTs":fetch_ts,
                       "lastUpdate_ts":lastUpdate_ts, "elevation":elevation_ft,
-                      "data": weather_data }
+                      "data": weather_data, "_id": "%d%f6.4%f6.4" % (fetch_ts,lat,lon) }
 
         for mp in soup.find_all("map"):
             for area in mp.find_all("area"):
@@ -164,7 +180,5 @@ with open(out_filename, 'a') as o:
         try:
             rsret = pit_inversion_data.add_docs([root_data])
         except:
-            print("ROCKSET FAILED! ts:%d" % (fetch_ts))
+            print("ROCKSET FAILED! ts:%d" % (fetch_ts),file=sys.stderr)
         time.sleep(0.75)
-
-
