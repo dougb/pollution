@@ -10,6 +10,7 @@ import math
 import json
 import time
 from rockset import Client, Q, F
+from rockset.exception import Error as RocksetError
 
 month_map = { "January":1, "February":2, "March":3,
            "April":4, "May":5, "June":6,"July":7,"August":8,
@@ -175,10 +176,15 @@ with open(out_filename, 'a') as o:
                     weather_data.append( { "fts":fts, "direction":direction, "speed":speed, 
                                            "temp":temp_f, 
                                            "mixing_ht":mixing_height } )
+                else:
+                    print("WARNING: Match failed, `%s`" % (mouse_over), file=sys.stderr)
 
         print(json.dumps(root_data),file=o)
         try:
             rsret = pit_inversion_data.add_docs([root_data])
+        except RocksetError as e:
+            print("ROCKSET FAILED! ts:%d Error:%s" % (fetch_ts,e),file=sys.stderr)
         except:
-            print("ROCKSET FAILED! ts:%d" % (fetch_ts),file=sys.stderr)
+            print("ROCKSET FAILED! Unknown Error ts:%d" % (fetch_ts),file=sys.stderr)
+
         time.sleep(0.75)
