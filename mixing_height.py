@@ -161,7 +161,7 @@ with open(out_filename, 'a') as o:
             for area in mp.find_all("area"):
                 mouse_over = area.attrs['onmouseover']
                 #print("MouseOver:%s" % (mouse_over))
-                match = re.match(".*(%s) (\d+)\D+(\d+)([a|p]m).+Temperature: (\d+) .+Surface Wind: (\w+) (\d+)mph.+Mixing Height: (\d+)ft" % (months_regex), mouse_over )
+                match = re.match(".*(%s) (\d+)\D+(\d+)([a|p]m).+Temperature: (\d+) .+Surface Wind: (\w+) (\d+|\d+G\d+)mph.+Mixing Height: (\d+)ft" % (months_regex), mouse_over )
                 if match:
                     month = match.group(1)
                     day = int(match.group(2))
@@ -170,7 +170,7 @@ with open(out_filename, 'a') as o:
                     temp_f = int(match.group(5))
                     temp_c = (float(temp_f) - 32.0) * 5.0/9.0 
                     direction = match.group(6)
-                    speed = int(match.group(7))
+                    speed = match.group(7) # This has to be string could be 10 or 10G20.
                     mixing_height = int(match.group(8))
                     fts = computeTime(month,day,hour,meridiem)
                     weather_data.append( { "fts":fts, "direction":direction, "speed":speed, 
