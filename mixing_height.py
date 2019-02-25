@@ -48,7 +48,7 @@ def genLatLons(lats,lons):
     return lat_lons
 
 def fetchUrlRetry(url,cache_filename):
-    c = 3
+    c = 4
     rc = 0
     data = fetchUrl(url,cache_filename)
     while( len(data) == 0 and  rc < c):
