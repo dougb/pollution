@@ -9,6 +9,7 @@ import time
 import math
 import json
 import time
+import traceback
 from rockset import Client, Q, F
 from rockset.exception import Error as RocksetError
 
@@ -183,8 +184,12 @@ with open(out_filename, 'a') as o:
         try:
             rsret = pit_inversion_data.add_docs([root_data])
         except RocksetError as e:
-            print("ROCKSET FAILED! ts:%d Error:%s" % (fetch_ts,e),file=sys.stderr)
+            print("ROCKSET FAILED! RocksetError ts:%d Error:%s" % (fetch_ts,e),file=sys.stderr)
+        except AttributeError as ae:
+            tb = traceback.format_exc()
+            print("ROCKSET FAILED! AttributeError ts:%d Error:%s TB:%s" % (fetch_ts,ae,tb),file=sys.stderr)
         except:
-            print("ROCKSET FAILED! Unknown Error ts:%d" % (fetch_ts),file=sys.stderr)
+            e = sys.exc_info()[0]
+            print("ROCKSET FAILED! Unknown Error ts:%d %s" % (fetch_ts,e),file=sys.stderr)
 
         time.sleep(0.75)
