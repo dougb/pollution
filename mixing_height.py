@@ -159,7 +159,7 @@ if (not os.path.exists("/tmp/mx")):
 grid_points = genGrid(40.148688, -80.332527, 40.717326,-79.596443, num_points)
 
 out_filename = time.strftime("%Y/%m/data%Y%m%d.json",time.gmtime())
-os.makedirs(os.path.dirname(out_filename), exist_ok=False)
+os.makedirs(os.path.dirname(out_filename), exist_ok=True)
 
 
 with open(out_filename, 'a') as o:
