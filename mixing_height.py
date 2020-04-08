@@ -161,8 +161,7 @@ with open(out_filename, 'a') as o:
         for mp in soup.find_all("map"):
             for area in mp.find_all("area"):
                 mouse_over = area.attrs['onmouseover']
-                #print("MouseOver:%s" % (mouse_over))
-                match = re.match(".*(%s) (\d+)\D+(\d+)([a|p]m).+Temperature: (\d+) .+Surface Wind: (\w+) (\d+|\d+G\d+)mph.+Mixing Height: (\d+)ft" % (months_regex), mouse_over )
+                match = re.match(".*(%s) (\d+)\D+(\d+)([a|p]m).+Temperature: (\d+) .+Surface Wind: (\w+) (\d+|\d+G\d+)mph.+Mixing Height: (\d+|N\/A)" % (months_regex), mouse_over )
                 if match:
                     month = match.group(1)
                     day = int(match.group(2))
@@ -172,7 +171,11 @@ with open(out_filename, 'a') as o:
                     temp_c = (float(temp_f) - 32.0) * 5.0/9.0 
                     direction = match.group(6)
                     speed = match.group(7) # This has to be string could be 10 or 10G20.
-                    mixing_height = int(match.group(8))
+                    mixing_height_raw = match.group(8)
+                    if mixing_height_raw == 'N/A':
+                        mixing_height = None
+                    else:
+                        mixing_height = int(mixing_height_raw)
                     fts = computeTime(month,day,hour,meridiem)
                     weather_data.append( { "fts":fts, "direction":direction, "speed":speed, 
                                            "temp":temp_f, 
