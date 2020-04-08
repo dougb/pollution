@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 import os
+import os.path
 import urllib.request
 import bs4
 import string
@@ -140,7 +141,7 @@ def store_data(rset, json):
             e = sys.exc_info()[0]
             print("ROCKSET FAILED! Unknown Error ts:%d %s" % (fetch_ts,e),file=sys.stderr)
         count += 1
-        print(f"RETRYING count:{count}")
+        print("RETRYING count:%d" % (count))
         time.sleep(10)
     print("ERROR: Failed to write to RockSet!!!",file=sys.stderr)
 
@@ -157,7 +158,9 @@ if (not os.path.exists("/tmp/mx")):
 
 grid_points = genGrid(40.148688, -80.332527, 40.717326,-79.596443, num_points)
 
-out_filename = time.strftime("data%Y%m%d.json",time.gmtime())
+out_filename = time.strftime("%Y/%m/data%Y%m%d.json",time.gmtime())
+os.makedirs(os.path.dirname(out_filename), exist_ok=False)
+
 
 with open(out_filename, 'a') as o:
 
