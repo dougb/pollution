@@ -124,6 +124,26 @@ def getElevation(data):
         print("Error Can't figure out Elevation!")
         return -1
 
+def store_data(rset, json):
+    count = 0
+    fetch_ts  = json['fetchTs']
+    while(count < 3):
+        try:
+            ret = rset.add_docs([root_data])
+            return
+        except RocksetError as e:
+            print("ROCKSET FAILED! RocksetError ts:%d Error:%s" % (fetch_ts,e),file=sys.stderr)
+        except AttributeError as ae:
+            tb = traceback.format_exc()
+            print("ROCKSET FAILED! AttributeError ts:%d Error:%s TB:%s" % (fetch_ts,ae,tb),file=sys.stderr)
+        except:
+            e = sys.exc_info()[0]
+            print("ROCKSET FAILED! Unknown Error ts:%d %s" % (fetch_ts,e),file=sys.stderr)
+        count += 1
+        print(f"RETRYING count:{count}")
+        time.sleep(10)
+    print("ERROR: Failed to write to RockSet!!!",file=sys.stderr)
+
 # Main
 num_points = 10
 
@@ -184,15 +204,7 @@ with open(out_filename, 'a') as o:
                     print("WARNING: Match failed, `%s`" % (mouse_over), file=sys.stderr)
 
         print(json.dumps(root_data),file=o)
-        try:
-            rsret = pit_inversion_data.add_docs([root_data])
-        except RocksetError as e:
-            print("ROCKSET FAILED! RocksetError ts:%d Error:%s" % (fetch_ts,e),file=sys.stderr)
-        except AttributeError as ae:
-            tb = traceback.format_exc()
-            print("ROCKSET FAILED! AttributeError ts:%d Error:%s TB:%s" % (fetch_ts,ae,tb),file=sys.stderr)
-        except:
-            e = sys.exc_info()[0]
-            print("ROCKSET FAILED! Unknown Error ts:%d %s" % (fetch_ts,e),file=sys.stderr)
+
+        store_data(pit_inversion_data, root_data)
 
         time.sleep(0.75)
