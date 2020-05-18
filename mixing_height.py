@@ -83,7 +83,7 @@ def fetchUrl(url,cache_filename):
 
     return data
 
-def computeTime(month_str,day,hour,meridiem,minute=0,second=0,year=None):
+def computeTime(month_str, day, hour, meridiem, minute=0, second=0,year=None):
     if month_str in month_map:
         mon = month_map[month_str]
     else:
@@ -125,12 +125,12 @@ def getElevation(data):
         print("Error Can't figure out Elevation!")
         return -1
 
-def store_data(rset, json):
+def store_data(rset, json_data):
     count = 0
-    fetch_ts  = json['fetchTs']
+    fetch_ts  = json_data['fetchTs']
     while(count < 3):
         try:
-            ret = rset.add_docs([root_data])
+            ret = rset.add_docs([json_data])
             return
         except RocksetError as e:
             print("ROCKSET FAILED! RocksetError ts:%d Error:%s" % (fetch_ts,e),file=sys.stderr)
@@ -145,69 +145,74 @@ def store_data(rset, json):
         time.sleep(10)
     print("ERROR: Failed to write to RockSet!!!",file=sys.stderr)
 
-# Main
-num_points = 10
+def main():
+    # Main
+    num_points = 10
 
-rs = Client()
-pit_inversion_data = rs.Collection.retrieve('pit_inversion_data')
-
-
-if (not os.path.exists("/tmp/mx")):
-    print("Creating /tmp/mx")
-    os.mkdir("/tmp/mx") # Make sure tmp dir exists.
-
-grid_points = genGrid(40.148688, -80.332527, 40.717326,-79.596443, num_points)
-
-out_filename = time.strftime("%Y/%m/data%Y%m%d.json",time.gmtime())
-os.makedirs(os.path.dirname(out_filename), exist_ok=True)
+    rs = Client()
+    pit_inversion_data = rs.Collection.retrieve('pit_inversion_data')
 
 
-with open(out_filename, 'a') as o:
+    if (not os.path.exists("/tmp/mx")):
+        print("Creating /tmp/mx")
+        os.mkdir("/tmp/mx") # Make sure tmp dir exists.
 
-    for i in range(len(grid_points)):
-        lat = grid_points[i]['lat']
-        lon = grid_points[i]['lon']
-        fetch_ts = int(time.time())
-        url = mixing_height_url % (lat,lon)
-        print("Fetching url:%s" % (url))
-        html_data = fetchUrlRetry(url,filename % (i))
-        soup = bs4.BeautifulSoup(html_data,"html.parser")
+    grid_points = genGrid(40.148688, -80.332527, 40.717326,-79.596443, num_points)
 
-        lastUpdate_ts = getLastUpdate(html_data)
-        elevation_ft = getElevation(html_data)
+    out_filename = time.strftime("%Y/%m/data%Y%m%d.json",time.gmtime())
+    os.makedirs(os.path.dirname(out_filename), exist_ok=True)
 
-        weather_data = []
-        root_data = { "lat":lat, "lon":lon, "fetchTs":fetch_ts,
-                      "lastUpdate_ts":lastUpdate_ts, "elevation":elevation_ft,
-                      "data": weather_data, "_id": "%d%f6.4%f6.4" % (fetch_ts,lat,lon) }
 
-        for mp in soup.find_all("map"):
-            for area in mp.find_all("area"):
-                mouse_over = area.attrs['onmouseover']
-                match = re.match(".*(%s) (\d+)\D+(\d+)([a|p]m).+Temperature: (\d+) .+Surface Wind: (\w+) (\d+|\d+G\d+)mph.+Mixing Height: (\d+|N\/A)" % (months_regex), mouse_over )
-                if match:
-                    month = match.group(1)
-                    day = int(match.group(2))
-                    hour = int(match.group(3))
-                    meridiem = match.group(4)
-                    temp_f = int(match.group(5))
-                    temp_c = (float(temp_f) - 32.0) * 5.0/9.0 
-                    direction = match.group(6)
-                    speed = match.group(7) # This has to be string could be 10 or 10G20.
-                    mixing_height_raw = match.group(8)
-                    if mixing_height_raw == 'N/A':
-                        mixing_height = None
+    with open(out_filename, 'a') as o:
+
+        for i in range(len(grid_points)):
+            lat = grid_points[i]['lat']
+            lon = grid_points[i]['lon']
+            fetch_ts = int(time.time())
+            url = mixing_height_url % (lat,lon)
+            print("Fetching url:%s" % (url))
+            html_data = fetchUrlRetry(url,filename % (i))
+            soup = bs4.BeautifulSoup(html_data,"html.parser")
+
+            lastUpdate_ts = getLastUpdate(html_data)
+            elevation_ft = getElevation(html_data)
+
+            weather_data = []
+            root_data = { "lat":lat, "lon":lon, "fetchTs":fetch_ts,
+                          "lastUpdate_ts":lastUpdate_ts, "elevation":elevation_ft,
+                          "data": weather_data, "_id": "%d%f6.4%f6.4" % (fetch_ts,lat,lon) }
+
+            for mp in soup.find_all("map"):
+                for area in mp.find_all("area"):
+                    mouse_over = area.attrs['onmouseover']
+                    match = re.match(".*(%s) (\d+)\D+(\d+)([a|p]m).+Temperature: (\d+) .+Surface Wind: (\w+) (\d+|\d+G\d+)mph.+Mixing Height: (\d+|N\/A)" % (months_regex), mouse_over )
+                    if match:
+                        month = match.group(1)
+                        day = int(match.group(2))
+                        hour = int(match.group(3))
+                        meridiem = match.group(4)
+                        temp_f = int(match.group(5))
+                        temp_c = (float(temp_f) - 32.0) * 5.0/9.0 
+                        direction = match.group(6)
+                        speed = match.group(7) # This has to be string could be 10 or 10G20.
+                        mixing_height_raw = match.group(8)
+                        if mixing_height_raw == 'N/A':
+                            mixing_height = None
+                        else:
+                            mixing_height = int(mixing_height_raw)
+                        fts = computeTime(month,day,hour,meridiem)
+                        weather_data.append( { "fts":fts, "direction":direction, "speed":speed, 
+                                               "temp":temp_f, 
+                                               "mixing_ht":mixing_height } )
                     else:
-                        mixing_height = int(mixing_height_raw)
-                    fts = computeTime(month,day,hour,meridiem)
-                    weather_data.append( { "fts":fts, "direction":direction, "speed":speed, 
-                                           "temp":temp_f, 
-                                           "mixing_ht":mixing_height } )
-                else:
-                    print("WARNING: Match failed, `%s`" % (mouse_over), file=sys.stderr)
+                        print("WARNING: Match failed, `%s`" % (mouse_over), file=sys.stderr)
 
-        print(json.dumps(root_data),file=o)
+            print(json.dumps(root_data),file=o)
 
-        store_data(pit_inversion_data, root_data)
+            store_data(pit_inversion_data, root_data)
+            
+            time.sleep(0.75)
 
-        time.sleep(0.75)
+
+if __name__ == "__main__":
+    main()
