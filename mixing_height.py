@@ -25,6 +25,8 @@ short_month_map = { "Jan":1,"Feb":2, "Mar":3, "Apr":4, "May":5, "Jun":6, "Jul":7
 short_months_regex = "|".join(short_month_map.keys())
 
 mixing_height_url = "http://forecast.weather.gov/MapClick.php?w0=t&w3=sfcwind&w10=mhgt&AheadHour=0&Submit=Submit&&FcstType=graphical&site=all&menu=1&textField1=%f&textField2=%f"
+hour_meridiem = {"12am":0, "1am":1, "2am":2,"3am":3, "4am":4, "5am":5, "6am":6, "7am":7, "8am":8, "9am":9, "10am":10, "11am":11,
+                 "12pm":12,"1pm":13, "2pm":14,"3pm":15, "4pm":16, "5pm":17, "6pm":18, "7pm":19, "8pm":20, "9pm":21, "10pm":22, "11pm":23 }
 
 
 filename = "/tmp/mx/mixing_height_%d.html"
@@ -83,36 +85,31 @@ def fetchUrl(url,cache_filename):
 
     return data
 
-def computeTime(month_str, day, hour, meridiem, minute=0, second=0,year=None):
-    if month_str in month_map:
-        mon = month_map[month_str]
-    else:
-        mon = short_month_map[month_str]
+def computeTime(time_string):
+    tm = time.strptime(time_string,'%I:%M %p %Z %B %d, %Y')
+    ts = time.mktime(tm)
+    #tstr = time.strftime('%I:%M %p %Z %B %d, %Y', time.localtime(ts))
+    #print(f"Time:'{tstr}' from '{time_string}' ts:{ts}")
+    return int(ts)
 
-    if meridiem == "pm" and hour != 12:
-        hour += 11
-    elif meridiem == "am":
-        if hour == 12:
-            hour = 0
-        else:
-            hour -= 1
+def computeRelTime(ts, month, day, hour, meridiem):
+    tm = time.localtime(ts)
+    month_num = month_map[month]
+    year = tm.tm_year
+    if tm.tm_mon == 12 and month_num == 1:
+        year += 1
 
-    if not year:
-        now = time.localtime()
-        if now.tm_mon == 12 and mon == 1:
-            year = now.tm_year + 1
-        else:
-            year = now.tm_year
+    tup = (year,month_num, day, hour_meridiem[ f"{hour}{meridiem}"], 0, 0, -1,-1,-1)
+    new_ts = time.mktime(tup)
+    #tstr = time.strftime('%I:%M %p %Z %B %d, %Y', time.localtime(new_ts))
+    #print(f"computeRelTime:{tstr} month:{month} day:{day} hour:{hour} ap:{meridiem} ts:{ts} new_ts:{new_ts}")
+    return int(new_ts)
 
-    ts = int(time.mktime((year,mon,day,hour,minute,second,0,0,0)))
-
-    return ts
 
 def getLastUpdate(data):
-    grp = re.findall("Last Update: (\d+)\:(\d\d) (am|pm) (\w\w\w) (\w\w\w) (\d+), (\d+)",data,flags=re.MULTILINE)
+    grp = re.findall("Last Update: (.*)</td", data, flags=re.MULTILINE)
     if grp:
-        (hr,min,meridem,tz,mon_str,mday,year) = grp[0]
-        return computeTime(mon_str,int(mday),int(hr),meridem,minute=int(min),year=int(year))
+        return computeTime(grp[0])
     else:
         print("ERROR:Couldn't find Last Updated", data)
         return -1
@@ -126,6 +123,9 @@ def getElevation(data):
         return -1
 
 def store_data(rset, json_data):
+    if rset is None:
+        print(f"DEBUG: Storing {json_data}")
+        return
     count = 0
     fetch_ts  = json_data['fetchTs']
     while(count < 3):
@@ -148,9 +148,12 @@ def store_data(rset, json_data):
 def main():
     # Main
     num_points = 10
-
-    rs = Client()
-    pit_inversion_data = rs.Collection.retrieve('pit_inversion_data')
+    if os.getenv("DEBUG") is None:
+        rs = Client()
+        pit_inversion_data = rs.Collection.retrieve('pit_inversion_data')
+    else:
+        print("DEBUG MODE!")
+        pit_inversion_data = None
 
 
     if (not os.path.exists("/tmp/mx")):
@@ -200,7 +203,8 @@ def main():
                             mixing_height = None
                         else:
                             mixing_height = int(mixing_height_raw)
-                        fts = computeTime(month,day,hour,meridiem)
+
+                        fts = computeRelTime(lastUpdate_ts, month, day,hour,meridiem)
                         weather_data.append( { "fts":fts, "direction":direction, "speed":speed, 
                                                "temp":temp_f, 
                                                "mixing_ht":mixing_height } )
