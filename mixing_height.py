@@ -99,7 +99,7 @@ def computeRelTime(ts, month, day, hour, meridiem):
     if tm.tm_mon == 12 and month_num == 1:
         year += 1
 
-    tup = (year,month_num, day, hour_meridiem[ f"{hour}{meridiem}"], 0, 0, -1,-1,-1)
+    tup = (year,month_num, day, hour_meridiem[ str(hour)+meridiem], 0, 0, -1,-1,-1)
     new_ts = time.mktime(tup)
     #tstr = time.strftime('%I:%M %p %Z %B %d, %Y', time.localtime(new_ts))
     #print(f"computeRelTime:{tstr} month:{month} day:{day} hour:{hour} ap:{meridiem} ts:{ts} new_ts:{new_ts}")
@@ -124,7 +124,7 @@ def getElevation(data):
 
 def store_data(rset, json_data):
     if rset is None:
-        print(f"DEBUG: Storing {json_data}")
+        print("DEBUG: Storing %s" %  (json_data))
         return
     count = 0
     fetch_ts  = json_data['fetchTs']
