@@ -86,7 +86,7 @@ def fetchUrl(url,cache_filename):
     return data
 
 def computeTime(time_string):
-    tm = time.strptime(time_string,'%I:%M %p %Z %B %d, %Y')
+    tm = time.strptime(time_string,'%I:%M %p %Z %b %d, %Y')
     ts = time.mktime(tm)
     #tstr = time.strftime('%I:%M %p %Z %B %d, %Y', time.localtime(ts))
     #print(f"Time:'{tstr}' from '{time_string}' ts:{ts}")
@@ -211,7 +211,8 @@ def main():
                     else:
                         print("WARNING: Match failed, `%s`" % (mouse_over), file=sys.stderr)
 
-            print(json.dumps(root_data),file=o)
+            if os.getenv("DEBUG", None) is None:
+                print(json.dumps(root_data),file=o)
 
             store_data(pit_inversion_data, root_data)
             
