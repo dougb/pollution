@@ -148,12 +148,12 @@ def store_data(rset, json_data):
 def main():
     # Main
     num_points = 10
-    if os.getenv("DEBUG") is None:
-        rs = Client()
-        pit_inversion_data = rs.Collection.retrieve('pit_inversion_data')
-    else:
-        print("DEBUG MODE!")
-        pit_inversion_data = None
+    #if os.getenv("DEBUG") is None:
+    #    rs = Client()
+    #    pit_inversion_data = 1 # rs.Collection.retrieve('pit_inversion_data')
+    #else:
+    #    print("DEBUG MODE!")
+    #    pit_inversion_data = None
 
 
     if (not os.path.exists("/tmp/mx")):
@@ -188,7 +188,7 @@ def main():
             for mp in soup.find_all("map"):
                 for area in mp.find_all("area"):
                     mouse_over = area.attrs['onmouseover']
-                    match = re.match(".*(%s) (\d+)\D+(\d+)([a|p]m).+Temperature: (\d+) .+Surface Wind: (\w+) (\d+|\d+G\d+)mph.+Mixing Height: (\d+|N\/A)" % (months_regex), mouse_over )
+                    match = re.match(".*(%s) (\d+)\D+(\d+)([a|p]m).+Temperature: (\-{0,1}\d+) .+Surface Wind: (\w+) (\d+|\d+G\d+)mph.+Mixing Height: (\d+|N\/A)" % (months_regex), mouse_over )
                     if match:
                         month = match.group(1)
                         day = int(match.group(2))
@@ -214,7 +214,7 @@ def main():
             if os.getenv("DEBUG", None) is None:
                 print(json.dumps(root_data),file=o)
 
-            store_data(pit_inversion_data, root_data)
+            #store_data(pit_inversion_data, root_data)
             
             time.sleep(0.75)
 

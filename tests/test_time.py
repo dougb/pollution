@@ -1,5 +1,5 @@
 
-from mixing_height import computeTime, computeRelTime
+from .mixing_height import computeTime, computeRelTime
 
 from time import localtime, strftime
 
