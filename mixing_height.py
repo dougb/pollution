@@ -52,11 +52,11 @@ def genLatLons(lats,lons):
     return lat_lons
 
 def fetchUrlRetry(url,cache_filename):
-    c = 4
+    c = 6
     rc = 0
     data = fetchUrl(url,cache_filename)
     while( len(data) == 0 and  rc < c):
-        print("WARNING: Failed to fetch '%s' retrying %d" % (url,rc), file=sys.stderr)
+        # print("WARNING: Failed to fetch '%s' retrying %d" % (url,rc), file=sys.stderr)
         time.sleep(5)
         rc += 1
         data = fetchUrl(url,cache_filename)
