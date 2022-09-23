@@ -16,7 +16,7 @@ jsonschema==2.6.0
 monotonic==1.5
 msgpack-python==0.5.6
 prompt-toolkit==1.0.13
-protobuf==3.15.0
+protobuf==3.18.3
 Pygments==2.7.4
 python-dateutil==2.7.5
 pytz==2018.7
